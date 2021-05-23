@@ -41,7 +41,7 @@ trait LogPrint
      */
     public function getLogName(): string
     {
-        $array = explode('\\', __CLASS__);
+        $array = explode('\\', static::class);
         $a = $array[count($array) - 1];
         return Yii::getAlias('@runtime') . '/logs/' . $a . '.log';
     }
@@ -76,7 +76,7 @@ trait LogPrint
     {
         $dt = date("d.m.Y H:i:s");
         $fd = fopen($this->getLogName(), 'wb');
-        fprintf($fd, "%s START %s\r\n", $dt, self::class);
+        fprintf($fd, "%s START %s\r\n", $dt, static::class);
         fclose($fd);
     }
 }

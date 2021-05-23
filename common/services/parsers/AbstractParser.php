@@ -2,13 +2,9 @@
 
 namespace common\services\parsers;
 
-use console\models\ArSite;
-use DiDom\Exceptions\InvalidSelectorException;
-use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Yii;
-use DiDom\Document;
 use common\traits\LogPrint;
 
 abstract class AbstractParser
@@ -23,6 +19,9 @@ abstract class AbstractParser
     protected int $maxid;
     protected Spreadsheet $spreadsheet;
     protected int $site_id;
+    protected string $moduleName;
+    protected int $cntProducts = 0;
+    protected string $linksFileName;
 
     abstract function run();
 
@@ -33,19 +32,22 @@ abstract class AbstractParser
         $this->link = $site["link"];
         $this->minid = $site["minid"];
         $this->maxid = $site["maxid"];
-        $linksFileName = __DIR__ . '/../../../XLSX/DenxLinks.xlsx';
-        $reader = new Xlsx();
-        $this->spreadsheet = $reader->load($linksFileName);
+        $this->moduleName = $site["modulname"];
+        $this->linksFileName = __DIR__ . '/../../../XLSX/' . ucfirst($site['modulname']) . "Links.xlsx";
+        if (file_exists($this->linksFileName)) {
+            $reader = new Xlsx();
+            $this->spreadsheet = $reader->load($this->linksFileName);
+        }
 
         $messageLog = [
-            'status' => 'Старт ParseDenx.',
+            'status' => 'Старт ' . static::class,
             'post' => $this->name,
         ];
 
         Yii::info($messageLog, 'parse_info'); //запись в parse.log
 
         $this->reprint();
-        $this->print("Создался ParseDenx");
+        $this->print("Создался " . static::class);
     }
 
 }
