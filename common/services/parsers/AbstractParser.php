@@ -23,7 +23,7 @@ abstract class AbstractParser
     protected int $cntProducts = 0;
     protected string $linksFileName;
 
-    abstract function run();
+    abstract function run(): bool;
 
     /**
      * AbstractParser constructor.
