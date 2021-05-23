@@ -25,14 +25,6 @@ class ArserController extends Controller
 
         if (isset($objParser)) {
             $objParser->run();
-            //            if (!self::DEBUG) {
-            //                ArSite::delModulData($site["id"]);
-            //                ArSite::setStatus($site["id"], 'parse');
-            //            }
-            //            $oParse->run();
-            //            if (!self::DEBUG) {
-            //                ArSite::setStatus($site["id"], 'new');
-            //            }
         }
     }
 }

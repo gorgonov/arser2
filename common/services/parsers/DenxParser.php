@@ -1,8 +1,6 @@
 <?php
 
-
 namespace common\services\parsers;
-
 
 use console\helpers\ParseUtil;
 use console\models\ArSite;
@@ -14,7 +12,6 @@ use Yii;
 
 class DenxParser extends AbstractParser
 {
-
     const DEBUG = false;
 
     /**
