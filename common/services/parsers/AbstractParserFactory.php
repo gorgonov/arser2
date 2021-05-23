@@ -3,33 +3,38 @@
 namespace common\services\parsers;
 
 use console\models\ArSite;
+use Exception;
 
 class AbstractParserFactory
 {
-    public static function get(string $moduleName): ?AbstractParser
+    /**
+     * @param string $moduleName
+     * @return AbstractParser
+     * @throws Exception
+     */
+    public static function get(string $moduleName): AbstractParser
     {
-        if (is_string($moduleName)) {
-            if ($moduleName == 'get') {
-                $site = ArSite::getSiteToParse();
-                if (!$site) {
-                    echo 'Нет сайтов для парсинга!' . PHP_EOL;
-                    return null;
-                }
-            } else {
-                $site = ArSite::getSiteByName($moduleName);
-                if (!$site) {
-                    echo 'Site "' . $moduleName . '" not found!' . PHP_EOL;
-                    return null;
-                }
-            }
-        }
+        $site = ($moduleName == 'get') ? ArSite::getSiteToParse() : ArSite::getSiteByName($moduleName);
 
+        if (!$site) {
+            throw new Exception(self::getTextException($moduleName));
+        }
 
         $className = sprintf("common\services\parsers\%s", ucfirst($site['modulname']) . "Parser");
 
-        echo $className . PHP_EOL;
-
         return (new $className($site));
+    }
 
+    /**
+     * @param string $moduleName
+     * @return string
+     */
+    private static function getTextException(string $moduleName): string
+    {
+        if ($moduleName == 'get') {
+            return 'Нет сайтов для парсинга!';
+        }
+
+        return 'Site "' . $moduleName . '" not found!';
     }
 }

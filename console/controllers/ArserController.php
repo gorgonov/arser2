@@ -3,28 +3,27 @@
 namespace console\controllers;
 
 use common\services\parsers\AbstractParserFactory;
-use Throwable;
 use yii\console\Controller;
+use Exception;
 
 // usage: php yii arser <moduleName>
 // если не указан модуль, то используется модуль, у кот. status='get'
-
 class ArserController extends Controller
 {
-    const DEBUG = false;
-
     /**
-     * action default
-     *
      * @param string $module
-     * @throws Throwable
+     * @throws Exception
      */
     public function actionIndex(string $module = 'get')
     {
-        $objParser = AbstractParserFactory::get($module);
+        try {
+            $objParser = AbstractParserFactory::get($module);
 
-        if (isset($objParser)) {
-            $objParser->run();
+            if (isset($objParser)) {
+                $objParser->run();
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage() . PHP_EOL;
         }
     }
 }

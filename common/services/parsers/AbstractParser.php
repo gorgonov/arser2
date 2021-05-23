@@ -25,7 +25,29 @@ abstract class AbstractParser
 
     abstract function run();
 
-    public function __construct($site)
+    /**
+     * AbstractParser constructor.
+     * @param array $site
+     */
+    public function __construct(array $site)
+    {
+        $this->init($site);
+
+        $messageLog = [
+            'status' => 'Старт ' . static::class,
+            'post' => $this->name,
+        ];
+
+        Yii::info($messageLog, 'parse_info'); //запись в parse.log
+
+        $this->reprint();
+        $this->print("Создался " . static::class);
+    }
+
+    /**
+     * @param array $site
+     */
+    private function init(array $site): void
     {
         $this->site_id = $site["id"];
         $this->name = $site["name"];
@@ -38,16 +60,6 @@ abstract class AbstractParser
             $reader = new Xlsx();
             $this->spreadsheet = $reader->load($this->linksFileName);
         }
-
-        $messageLog = [
-            'status' => 'Старт ' . static::class,
-            'post' => $this->name,
-        ];
-
-        Yii::info($messageLog, 'parse_info'); //запись в parse.log
-
-        $this->reprint();
-        $this->print("Создался " . static::class);
     }
 
 }

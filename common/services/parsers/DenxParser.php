@@ -6,9 +6,10 @@ use console\helpers\ParseUtil;
 use console\models\ArSite;
 use DiDom\Document;
 use DiDom\Exceptions\InvalidSelectorException;
-use PhpOffice\PhpSpreadsheet\Exception;
+use PhpOffice\PhpSpreadsheet\Exception as OfficeException;
 use Throwable;
 use Yii;
+use Exception;
 
 class DenxParser extends AbstractParser
 {
@@ -18,12 +19,12 @@ class DenxParser extends AbstractParser
      * @return bool
      * @throws Throwable
      * @throws \yii\db\Exception
+     * @throws Exception
      */
     function run(): bool
     {
         if (!isset($this->spreadsheet)) {
-            echo "Не удалось открыть файл " . $this->linksFileName . PHP_EOL;
-            return false;
+            throw new Exception('Не удалось открыть файл ' . $this->linksFileName);
         }
 
         if (!self::DEBUG) {
@@ -57,7 +58,7 @@ class DenxParser extends AbstractParser
     }
 
     /**
-     * @throws Exception
+     * @throws OfficeException
      */
     private function runGroupProducts()
     {
@@ -66,7 +67,6 @@ class DenxParser extends AbstractParser
         for ($row = 2; $row <= $highestRow; $row++) {
             $category = $worksheet->getCell("A" . $row)->getValue();
             if ($category) { // борьба с пустыми строками с таблице
-
                 $category = ParseUtil::dotToComma($category);
                 $link = $worksheet->getCell("B" . $row)->getValue();
                 $this->print("Добавляем страницу: $link");
@@ -81,7 +81,7 @@ class DenxParser extends AbstractParser
 
     /**
      * Обработаем 2 лист - ссылки на товары
-     * @throws Exception
+     * @throws OfficeException
      */
     private function runProducts()
     {
@@ -129,7 +129,6 @@ class DenxParser extends AbstractParser
             $i = 0;
             foreach ($aProducts as $el) {
                 $i++;
-
                 $link = $this->link . $el->attr('href');
                 $this->print("Обрабатываем страницу: " . $link . "Категория $cat. Продукт $i/$countProducts");
                 $this->aProducts[] = [
@@ -141,21 +140,22 @@ class DenxParser extends AbstractParser
     }
 
     /**
+     * @param $link
+     * @return array
      * @throws InvalidSelectorException
+     * @throws Exception
      */
-    protected function getProductInfo($link)
+    protected function getProductInfo($link): array
     {
         $this->print("Обрабатываем страницу: $link");
         $doc = ParseUtil::tryReadLink($link);
         if (!$doc) {
-            return false;
+            throw new Exception('Не удалось прочитать страницу ' . $link);
         }
 
-        $ar = array();
+        $ar = [];
 
         $ar["topic"] = trim($doc->first('.site-main__inner h1')->innerHtml()); // Заголовок товара
-
-        // артикул будет рассчитан при записи в таблицу
 
         if ($doc->has('.product-price>.price-old')) {
             $ar["new_price"] = parseUtil::normalSum($doc->first('.price-old')->text()); // Цена старая
@@ -163,7 +163,7 @@ class DenxParser extends AbstractParser
             $ar["new_price"] = parseUtil::normalSum($doc->first('.product-price>.price-current')->text()); // Цена новая
         }
 
-        $aImgLink = array();
+        $aImgLink = [];
         $aImg = $doc->find('.light_gallery2'); // список картинок для карусели
         if (!$aImg) {
             $aImg = $doc->find('.product-image>a');
@@ -176,33 +176,15 @@ class DenxParser extends AbstractParser
             }
         }
         $ar["aImgLink"] = $aImgLink;
-
         $ar["title"] = trim($doc->first('title')->text()); // title страницы
 
         // формируем таблицу с характеристиками продукта c разметкой
         $tbl = $doc->first('.shop2-product-options')->html();
-        $description = $doc->first('#shop2-tabs-1') ? trim($doc->first('#shop2-tabs-1')->text()) : '';
+        $description = ($s=$doc->first('#shop2-tabs-1')) ? trim($s->text()) : '';
 
-        // 1. найдем размеры в формате ШхВхГ
-        $re = '/(\d+)х(\d+)х(\d+)\s*мм/m';
-        $str = $tbl . $description;
+        $aTmp = $this->getSizes($tbl . $description);
 
-        if (preg_match_all($re, $str, $matches, PREG_SET_ORDER)) {
-            $aTmp["Ширина"] = $matches[0][1];
-            $aTmp["Высота"] = $matches[0][2];
-            $aTmp["Глубина"] = $matches[0][3];
-        }
-        // 2. Найдем размеры в формате Ширина:840 мм; Высота:736 мм; Глубина:500 мм.
-        if (!isset($aTmp)) {
-            $re = '/Ширина\s*[:-]\s*(\d+)[м;\s]*Высота\s*[:-]\s*(\d+)[м;\s]*Глубина\s*[:-]\s*(\d+)[м;\s]*/m';
-            if (preg_match_all($re, $str, $matches, PREG_SET_ORDER)) {
-                $aTmp["Ширина"] = $matches[0][1];
-                $aTmp["Высота"] = $matches[0][2];
-                $aTmp["Глубина"] = $matches[0][3];
-            }
-        }
-
-        if (isset($aTmp)) {
+        if (!is_null($aTmp)) {
             $ar["attr"] = $aTmp;
         }
 
@@ -214,14 +196,16 @@ class DenxParser extends AbstractParser
     }
 
     /**
-     * @throws \yii\db\Exception
      * @throws InvalidSelectorException
+     * @throws \yii\db\Exception
+     * @throws Exception
      */
     private function runItems()
     {
         $product_id = $this->minid;
         $this->cntProducts = 0;
         foreach ($this->aProducts as $el) {
+            // todo вынести в AbstractParser (если возможно)
             $lnk = $el['link'];
             $cat = $el['category'];
             $productInfo = $this->getProductInfo($lnk);
@@ -282,5 +266,34 @@ class DenxParser extends AbstractParser
                 return [];
             }
         }
+    }
+
+    /**
+     * @param string $str
+     * @return array|null
+     */
+    private function getSizes(string $str): ?array
+    {
+        // 1. найдем размеры в формате ШхВхГ
+        $re = '/(\d+)х(\d+)х(\d+)\s*мм/m';
+
+        if (preg_match_all($re, $str, $matches, PREG_SET_ORDER)) {
+            $aTmp["Ширина"] = $matches[0][1];
+            $aTmp["Высота"] = $matches[0][2];
+            $aTmp["Глубина"] = $matches[0][3];
+        }
+        // 2. Найдем размеры в формате Ширина:840 мм; Высота:736 мм; Глубина:500 мм.
+        if (!isset($aTmp)) {
+            $re = '/Ширина\s*[:-]\s*(\d+)[м;\s]*Высота\s*[:-]\s*(\d+)[м;\s]*Глубина\s*[:-]\s*(\d+)[м;\s]*/m';
+            if (preg_match_all($re, $str, $matches, PREG_SET_ORDER)) {
+                $aTmp["Ширина"] = $matches[0][1];
+                $aTmp["Высота"] = $matches[0][2];
+                $aTmp["Глубина"] = $matches[0][3];
+            }
+        }
+
+        return $aTmp ?? null;
+
+
     }
 }

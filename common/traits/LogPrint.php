@@ -43,6 +43,7 @@ trait LogPrint
     {
         $array = explode('\\', static::class);
         $a = $array[count($array) - 1];
+
         return Yii::getAlias('@runtime') . '/logs/' . $a . '.log';
     }
 
@@ -50,7 +51,7 @@ trait LogPrint
      * Выводит в лог строку с таймстампом
      * @param string $message
      */
-    public function print(string $message)
+    public function print(string $message): void
     {
         $dt = date("d.m.Y H:i:s");
         $fd = fopen($this->getLogName(), 'at');
