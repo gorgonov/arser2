@@ -21,7 +21,7 @@ class ForvardmebelParser extends AbstractParser
      * @throws Throwable
      * @throws InvalidSelectorException
      */
-    function run(): bool
+    public function run(): bool
     {
         if (!self::DEBUG) {
             ArSite::delModulData($this->site_id);

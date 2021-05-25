@@ -21,7 +21,7 @@ class DenxParser extends AbstractParser
      * @throws \yii\db\Exception
      * @throws Exception
      */
-    function run(): bool
+    public function run(): bool
     {
         if (!isset($this->spreadsheet)) {
             throw new Exception('Не удалось открыть файл ' . $this->linksFileName);
