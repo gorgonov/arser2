@@ -173,17 +173,12 @@ class ParseUtil
         $key_array = array();
 
         foreach ($array as $val) {
-//            echo "val=$val  val[$key]={$val[$key]}\n";
             if (!in_array($val[$key], $key_array)) {
                 $key_array[$i] = $val[$key];
                 $temp_array[$i] = $val;
-//                echo "Добавили: ";
-//                print_r($val);
             }
             $i++;
         }
-//        print_r($temp_array);
-//        die();
         return $temp_array;
     }
 

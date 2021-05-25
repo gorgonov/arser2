@@ -21,7 +21,7 @@ class ForvardmebelParser extends AbstractParser
      * @throws Throwable
      * @throws InvalidSelectorException
      */
-    public function run(): bool
+    public function run()
     {
         if (!self::DEBUG) {
             ArSite::delModulData($this->site_id);
@@ -43,7 +43,6 @@ class ForvardmebelParser extends AbstractParser
             ArSite::setStatus($this->site_id, 'new');
         }
 
-        return true;
     }
 
     /**

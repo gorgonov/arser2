@@ -19,7 +19,7 @@ class GorizontParser extends AbstractParser
      * @throws dbException
      * @throws Throwable
      */
-    function run(): bool
+    function run()
     {
         if (!self::DEBUG) {
             ArSite::delModulData($this->site_id);
@@ -37,17 +37,15 @@ class GorizontParser extends AbstractParser
         // 3. Записываем в базу продукты
         $this->runItems();
 
-        $messageLog = ["Загружено " . $this->cntProducts . " товаров"];
-
+        $messageLog = "Загружено " . $this->cntProducts . " товаров";
         Yii::info($messageLog, 'parse_info'); //запись в parse.log
-
+        $this->print($messageLog);
         $this->endprint();
 
         if (!self::DEBUG) {
             ArSite::setStatus($this->site_id, 'new');
         }
 
-        return true;
     }
 
     /**
