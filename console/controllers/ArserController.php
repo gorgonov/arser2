@@ -24,6 +24,9 @@ class ArserController extends Controller
             }
         } catch (Exception $e) {
             echo $e->getMessage() . PHP_EOL;
+            echo $e->getFile() . PHP_EOL;
+            echo $e->getLine() . PHP_EOL;
+            echo $e->getCode() . PHP_EOL;
         }
     }
 }

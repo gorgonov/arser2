@@ -73,6 +73,7 @@ class ParseOlmeko
         $this->addProducts();
 
         // 4. Парсим товары, пишем в БД
+        $this->runItems();
         $product_id = $this->minid;
         foreach ($this->aProducts as $el) {
             $lnk = $el['link'];
@@ -286,10 +287,11 @@ class ParseOlmeko
     }
 
     /**
+     * Возвращает количество дней до даты $newDate
      * @param $newDate
-     * @return количество дней до даты $newDate
+     * @return integer
      */
-    protected function dayCount($newDate)
+    protected function dayCount($newDate): int
     {
         $now = new DateTime(); // текущее время на сервере
         $date = DateTime::createFromFormat("d.m.Y", $newDate); // задаем дату в любом формате
@@ -300,7 +302,7 @@ class ParseOlmeko
 // еще раз уточним. Я иду по твоим ссылкам и пропускаю товары, которые не проходят фильтр: в тексте BTS, Лаворо, Рики, Ричи, Ральф, Tr, Em, Вэлкам, ТрЯ или производители из городов Волгодонск, Калининград, Ростов-на-Дону? Все так?
 
     /**
-     * возвращает адрес ссылки на картинку
+     * Возвращает адрес ссылки на картинку
      * @param $str - сырой адрес ссылки на картинку
      * @return string - уже обработанный адрес ссылки на картинку, можно уже качать картинку.
      */
@@ -335,7 +337,7 @@ class ParseOlmeko
      * @param $table - didom-объект на таблицу с характеристиками товара
      * по умолчанию используется
      *
-     * @return возвращает таблицу с характеристиками в формате:
+     * @return string Возвращает таблицу с характеристиками в формате:
      * <table>
      * <tr>
      * <td class="feature_name">имя характеристики</td>;
@@ -344,7 +346,7 @@ class ParseOlmeko
      * ...
      * </table>
      */
-    protected function getAttrAll($table)
+    protected function getAttrAll($table): string
     {
         $aTmp = $table->find("tr>td.feature_name");
         $result = "<table class='desc-table'>";
@@ -358,6 +360,7 @@ class ParseOlmeko
             $result .= "</tr>";
         }
         $result .= "</table>";
+
         return $result;
     }
 
@@ -373,9 +376,10 @@ class ParseOlmeko
      * ...
      * </table>
      * @param $attrList - список атрибутов, значения которых надо найти
-     * @return array - атрибуты продукта
+     * @return string - атрибуты продукта
+     * @throws \DiDom\Exceptions\InvalidSelectorException
      */
-    protected function getAttr($table, $attrList)
+    protected function getAttr($table, $attrList): string
     {
         if (is_string($table)) {
             $table = new Document($table);
@@ -388,7 +392,6 @@ class ParseOlmeko
                 if ($td) {
                     $td2 = $td->nextSibling("td"); // $td->parent()->find('td')[1]->text();
                     $aTmp[$str] = $td2->text(); // $td->parent()->find('td')[1]->text();
-                } else {
                 }
             }
             return $aTmp;

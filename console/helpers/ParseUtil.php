@@ -12,6 +12,11 @@ use Yii;
 
 class ParseUtil
 {
+    /**
+     * Заменяет точку на запятую в строке
+     * @param string $text
+     * @return array|string|string[]
+     */
     public static function dotToComma(string $text)
     {
         return str_replace(".", ",", $text);
@@ -39,20 +44,15 @@ class ParseUtil
             $result = ParseUtil::get_web_page($link);
 
             if (($result['errno'] != 0) || ($result['http_code'] != 200)) {
-                $mess = $noTry[$i] . " попытка. link=";
-                print_r($link);
+                $mess = $noTry[$i] . " попытка.";
                 $status = 'Ошибка №=' . $result['errno'] . ' http_code=' . $result['http_code'] . " " . $result['errmsg'];
-                echo "$mess\n, $status \n";
+                echo 'link=' . $link . PHP_EOL;
+                echo $mess . PHP_EOL;
+                echo $status . PHP_EOL;
                 sleep(3);
             } else {
-//                echo str_repeat("=",10);
                 $page = $result['content'];
-//                print_r($page);
                 $document = new Document($page, false, 'UTF-8', Document::TYPE_HTML);
-//                $document = ParseUtil::myUrlEncode($document); // перекодируем кириллицу ...
-//                echo str_repeat("-",10);
-//                print_r($document->html());
-//                die();
                 return $document;
             }
         }
@@ -60,10 +60,11 @@ class ParseUtil
     }
 
     /**
+     * заменяет в $string кириллицу на %nn
      * @param $string
-     * @return заменяет в $string кириллицу на %nn
+     * @return string
      */
-    protected static function myUrlEncode($string)
+    protected static function myUrlEncode($string): string
     {
         $entities = array(
             '%21',
@@ -198,6 +199,15 @@ class ParseUtil
             return $str;
         }
         return preg_replace('/' . preg_quote($ptr, '/') . '/su' . ($cr ? 'i' : ''), $replace, $str);
+    }
+
+    /**
+     * @param string $input
+     * @return string
+     */
+    public static function convertEntities(string $input): string
+    {
+        return preg_replace_callback("/(&#[0-9]+;)/", function($m) { return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES"); }, $input);
     }
 
 }

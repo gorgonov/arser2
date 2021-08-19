@@ -53,7 +53,6 @@ class DenxParser extends AbstractParser
         if (!self::DEBUG) {
             ArSite::setStatus($this->site_id, 'new');
         }
-
     }
 
     /**
